@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "bigdata-8989",
+  "private_key_id": "c84dd170777d6b9d5b684ee183d0103cb48675b8",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDqOfcrPVE4jnVg\nUsxbABhAbLTedfShtuf51kyJAoxG1YuR92ChkL0gXs2/NIq/gbrQ4Euheqaw/YPe\nBzn5qkcmDTwIZfi3JvNxVs2WYijJRu0lClb/CBjBuBKzNirBLpdsXhwxcCNHz2kg\nWhsYjv5wX7vAJ5UlDWmPWt6XWgqBWc+4JdCWZ7kC3P1cuHQHlMMqVJUEDDYbiH3A\nz6KAwgPdDhPbtj0yBRPbo9jFzpbJbjjwqW77GJtxCivIwIR2he8noeJgsZ1f3FKI\ntl3DoryS2t7pHVaFIuPztDkX1sTahpIEZHDdqhIli3NqBCvnL3B6yDnVrqbQQ4NM\nWooG4fxvAgMBAAECggEAYHHs0iul6YVTVI3TYrcnxUNduGpWiE4ht/CjRBk9/J7K\noRh8/Bn2nkEbNBuk9BUtgPuSeNPhlmhVJ5PPLfwM3uC9MvIWFwhdXnJxJfaWN8bS\nOBnJV6sUUpQCczOfKDuQk0kvD7ZOeK+xaGZh2NtsboYk74r88SxUJniyxhyHzdmN\nI/kGSM4TUbG4VXzvlx1NTNiJrkCHifsv6ZG20MzP9hVeHzdpIWfWOb43Y3eQbl/M\npvI4owG+uwz3xZYFpLLz514PBdgpejIF6w/R8jT/+gQcD+T/KOexQ/zNeIIPfxt+\nkGOuW1LgxX23WkcoD/iegQYN+ht3DwYRT0LcRU5L7QKBgQD66BSOFfdreZBBrSAh\nelXTVD4erjkma7wPjScOmGp42sF6pcS6X3LA8YIGXVGqjMj6DCW35RG9Qv0lI9Xl\ntfCeH85PbBRcOpI7FzcGTxyY3UnISRsBPwAGLdufKA/kgSd0QWqfIfxoeSaAwYDB\nRWUC5EowWTMj5xR4Q9Mx3dqiQwKBgQDu+zOJfcsS8dYxgKJHI4/JedUTZaHAhWkP\nQfj5DG/qkXjk45q3DXlane6G2IjNC62nwAtpDonN2cZma5AGoNEJzWTtq/zwEer2\nvz9E6wuHS1+KDFS+ErcyYI1y9UTwTc64LjNG8chnkA2k986K0GHgczE1w2jOmEpg\nISiyTgyoZQKBgCfS4kBTGDxExTLHacwmgKzUOC/ic0u32deWDdbxNiUMg50V5o22\nTJ53Nq4P7cBmLBgUCYCQqSojEc7tSyv0nsZaQgK1It4opcEfRCqKL/3LUcSqZdDi\n0PwqFyvBzhP0s/Bt2aB8YnWqlQPmsqr6erfkyCm4XreaG9Oi4EiP7/3FAoGAKGoM\n1iSS0hpZubdiOhuWdmEHGqemShOFp9HlU+C5kHaXdkXTZT9/FUb+DonR4LMn4+WD\nSHnv7gL1HV71VVme4ER+2/6o4MR28tF21qXVJkUl3Aen0RkDKB7R7O3zgZv26IjP\nnSDIXlMrK4nIwQrqcnWojcoFEGMKuOUCp9yxIU0CgYEAp0EuZKHGIjD520873SXj\nJt7zwSXe7oJFCz3+7LyZLy0UZ2tyQHWb0eJ0ZWN86Ew9/kYi3CLWXn06c0pikN7r\n7UXNn8hXj2xaWGD3lK6NyLTAGecIducIwZl4drPiggcMLDx3rh19XIg52Bs20Vfm\nS1yWYgsAPyrjiDrXeEKxndg=\n-----END PRIVATE KEY-----\n",
+  "client_email": "sql-object-access@bigdata-8989.iam.gserviceaccount.com",
+  "client_id": "103663117461399149467",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sql-object-access%40bigdata-8989.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
