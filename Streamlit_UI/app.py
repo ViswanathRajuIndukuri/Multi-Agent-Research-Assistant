@@ -4,6 +4,9 @@ import os
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+# Set page layout at the top
+st.set_page_config(page_title="Research Agent", page_icon="📄", layout="wide")
+
 # Initialize session state variables
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
@@ -13,12 +16,17 @@ if 'username' not in st.session_state:
     st.session_state.username = None
 if 'page' not in st.session_state:
     st.session_state.page = "home"
+if 'selected_index' not in st.session_state:
+    st.session_state.selected_index = None
+if 'prev_selected_index' not in st.session_state:
+    st.session_state.prev_selected_index = None
+if 'history' not in st.session_state:
+    st.session_state.history = []
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ''
 
 def initial_home():
-    # Set page layout to wide only on the home page
-    st.set_page_config(page_title="Research Agent", page_icon="📄", layout="wide")
-
-    # Apply custom CSS to center the content
+    # Apply custom CSS to center the content and adjust chat message font sizes
     st.markdown(
         """
         <style>
@@ -59,13 +67,17 @@ def initial_home():
         .stButton > button:hover {
             background-color: #45a049;
         }
+        /* Adjust font size in chat messages */
+        div[data-testid="stChatMessage"] {
+            font-size: 16px !important;
+        }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    # Create columns to position the login button at the top right
-    col1, col2 = st.columns([8, 1])  # Adjusted column widths
+    # Create columns to position the login/logout button at the top right
+    top_col1, top_col2 = st.columns([8, 1])  # Adjusted column widths
 
     def go_to_signin():
         st.session_state.page = "signin"
@@ -75,23 +87,115 @@ def initial_home():
         st.session_state.token = None
         st.session_state.username = None
         st.session_state.page = "home"
+        st.session_state.selected_index = None
+        st.session_state.prev_selected_index = None
+        st.session_state.history = []
+        st.session_state.user_input = ''
 
-    with col2:
+    with top_col2:
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         if st.session_state.logged_in:
             st.button("🚪 Logout", key="logout_button", on_click=logout)
         else:
             st.button("🔒 Login", key="login_button", on_click=go_to_signin)
 
-    # Display the application information with adjusted font sizes
+    # Display content based on login status
     if st.session_state.logged_in:
+        # Top heading
         st.markdown(
             f'<div style="text-align: center; font-size: 2.5rem;">Welcome, {st.session_state.username}!</div>',
             unsafe_allow_html=True)
         st.markdown(
-            '<div style="text-align: center; font-size: 2.5rem;">You are now logged in.</div>',
+            '<div style="text-align: center; font-size: 2rem;">Your Research Assistant</div>',
             unsafe_allow_html=True)
+        st.write("---")  # Optional separator
+
+        # Display the index selection
+        st.title("Select Index")
+
+        headers = {
+            "Authorization": f"Bearer {st.session_state.token}"
+        }
+        response = requests.get(f"{API_URL}/pinecone-indexes", headers=headers)
+
+        if response.status_code == 200:
+            index_list = response.json().get("indexes", [])
+            if index_list:
+                selected_index = st.selectbox(
+                    "Pinecone Indexes:",
+                    index_list,
+                    key='selected_index'
+                )
+                st.write(f"You selected: **{selected_index}**")
+
+                # Check if the selected index has changed
+                if st.session_state.selected_index != st.session_state.prev_selected_index:
+                    st.session_state.history = []  # Reset chat history
+                    st.session_state.prev_selected_index = st.session_state.selected_index
+            else:
+                st.info("No indexes available in Pinecone.")
+        elif response.status_code == 401:
+            st.error("Your session has expired. Please log in again.")
+            # Log the user out
+            logout()
+        else:
+            error_detail = response.json().get('detail', 'Unknown error')
+            st.error(f"Failed to retrieve Pinecone indexes: {error_detail}")
+
+        # Check if an index is selected
+        if st.session_state.get('selected_index'):
+            st.write("---")  # Separator
+            st.title("Chat with Assistant")
+
+            # Input box for user message
+            user_input = st.chat_input("Enter your query:")
+
+            # Display chat messages
+            chat_container = st.container()
+            with chat_container:
+                for message in st.session_state.history:
+                    with st.chat_message(message["role"]):
+                        st.markdown(message["content"])
+
+            if user_input:
+                with st.chat_message("user"):
+                    st.markdown(user_input)
+                st.session_state.history.append({"role": "user", "content": user_input})
+
+                # Call the backend API to get assistant's reply
+                data = {
+                    "query": user_input,
+                    "index_name": st.session_state.selected_index  # Use the session state variable
+                }
+                headers = {
+                    "Authorization": f"Bearer {st.session_state.token}",
+                    "Content-Type": "application/json"
+                }
+                research_response = requests.post(
+                    f"{API_URL}/run-research-query",
+                    json=data,
+                    headers=headers
+                )
+
+                if research_response.status_code == 200:
+                    result = research_response.json().get("result", "")
+
+                    # Display the assistant's response
+                    with st.chat_message("assistant"):
+                        st.markdown(result)
+                    st.session_state.history.append({"role": "assistant", "content": result})
+                elif research_response.status_code == 401:
+                    st.error("Your session has expired. Please log in again.")
+                    # Log the user out
+                    logout()
+                else:
+                    error_detail = research_response.json().get('detail', 'Unknown error')
+                    st.error(f"Failed to run research query: {error_detail}")
+        else:
+            st.info("Please select an index above to start chatting.")
+
     else:
+        # The rest of your code for the non-logged-in user remains the same
         st.markdown(
             '<div style="text-align: center; font-size: 3.5rem; font-weight: bold;">Research Assistant Using LangGraph</div>',
             unsafe_allow_html=True)
@@ -126,12 +230,9 @@ def initial_home():
             '<div style="text-align: center; font-size: 2.5rem;">🚀 Get Started</div>',
             unsafe_allow_html=True)
         st.markdown('<p style="text-align:center;">Click the <strong>🔒 Login</strong> button at the top right to sign in or create a new account.</p>', unsafe_allow_html=True)
-        st.markdown('<div class="footer">© 2024 Multi-modal RAG. All rights reserved.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="footer">© 2024 Research Assistant. All rights reserved.</div>', unsafe_allow_html=True)
 
 def register():
-    # Set default page layout
-    st.set_page_config(page_title="Sign Up", page_icon="🔑")
-
     # Add a "Back" button at the top right to return to the sign-in page
     col1, col2 = st.columns([8, 1.5])  # Adjusted column widths
 
@@ -180,9 +281,6 @@ def register():
     st.button("✅ Register", on_click=handle_register)
 
 def login():
-    # Set default page layout
-    st.set_page_config(page_title="Sign In", page_icon="🔐")
-
     # Add a "Back" button at the top right to return to the welcome page
     col1, col2 = st.columns([8, 1.5])  # Adjusted column widths
 
