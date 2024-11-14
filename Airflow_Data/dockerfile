@@ -42,8 +42,8 @@ RUN pip install --no-cache-dir \
 
 USER root
 
-RUN mkdir -p /opt/airflow/downloaded_pdfs /opt/airflow/document_images && \
-    chown -R airflow:root /opt/airflow/downloaded_pdfs /opt/airflow/document_images
+# RUN mkdir -p /opt/airflow/downloaded_pdfs /opt/airflow/document_images && \
+#     chown -R airflow:root /opt/airflow/downloaded_pdfs /opt/airflow/document_images
 
 #USER airflow
 

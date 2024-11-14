@@ -23,12 +23,20 @@ def save_pdf_locally(pdf_content, filename, folder):
         if not os.path.exists(folder):
             os.makedirs(folder)
         
-        file_path = os.path.join(folder, filename)
+        # Get absolute path
+        file_path = os.path.abspath(os.path.join(folder, filename))
+        
+        # Save the file
         with open(file_path, 'wb') as f:
             f.write(pdf_content)
-        print(f"Saved {filename} to {folder}.")
+            
+        print(f"Saved {filename} to {folder}")
+        print(f"Full path: {file_path}")
+        return file_path  # Optionally return the full path
+        
     except Exception as e:
         print(f"Failed to save {filename} to {folder}. Error: {e}")
+        return None
 
 def download_pdf(url, filename, folder):
     """Download the PDF from the given URL and save it locally."""
@@ -103,7 +111,8 @@ def scrape_all_pages_for_pdfs():
     page_number = 0
     downloaded_pdfs = set()
     max_pdfs = 3  # Download only 3 PDFs
-    download_folder = "downloaded_pdfs"  # Folder to save PDFs
+    #download_folder = "downloaded_pdfs"  # Folder to save PDFs
+    download_folder = "/opt/airflow/downloaded_pdfs"
 
     while len(downloaded_pdfs) < max_pdfs:
         page_url = f"{base_url}#first={page_number * 10}&sort=%40officialz32xdate%20descending"
@@ -115,9 +124,9 @@ def scrape_all_pages_for_pdfs():
 # Wrap the main function in an entry point
 if __name__ == "__main__":
     # For local run
-    driver = webdriver.Chrome(options=chrome_options)
+    #driver = webdriver.Chrome(options=chrome_options)
     # For Docker container run, comment out the above line and uncomment the line below
-    # driver = webdriver.Remote(command_executor='http://selenium-chrome:4444/wd/hub', options=chrome_options)
+    driver = webdriver.Remote(command_executor='http://selenium-chrome:4444/wd/hub', options=chrome_options)
     try:
         scrape_all_pages_for_pdfs()
     finally:
