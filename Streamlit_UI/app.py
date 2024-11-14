@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import os
+from fpdf import FPDF
+import tempfile
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
@@ -24,6 +26,40 @@ if 'history' not in st.session_state:
     st.session_state.history = []
 if 'user_input' not in st.session_state:
     st.session_state.user_input = ''
+# Add to your existing session state initialization
+if 'query_count' not in st.session_state:
+    st.session_state.query_count = 0
+if 'qa_history' not in st.session_state:
+    st.session_state.qa_history = []
+
+def create_qa_pdf():
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Set font for title
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, "Research Query Report", ln=True, align='C')
+    pdf.ln(10)
+    
+    # Set font for content
+    pdf.set_font("Arial", size=12)
+    
+    for qa in st.session_state.qa_history:
+        # Add question
+        pdf.set_font("Arial", "B", 12)
+        pdf.multi_cell(0, 10, f"Q: {qa['question']}")
+        pdf.ln(5)
+        
+        # Add answer
+        pdf.set_font("Arial", "", 12)
+        pdf.multi_cell(0, 10, f"A: {qa['answer']}")
+        pdf.ln(10)
+    
+    # Create temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as fp:
+        pdf.output(fp.name)
+        return fp.name
+
 
 def initial_home():
     # Apply custom CSS to center the content and adjust chat message font sizes
@@ -91,6 +127,8 @@ def initial_home():
         st.session_state.prev_selected_index = None
         st.session_state.history = []
         st.session_state.user_input = ''
+        st.session_state.query_count = 0  # Reset query count
+        st.session_state.qa_history = []  # Reset QA history
 
     with top_col2:
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
@@ -131,6 +169,8 @@ def initial_home():
                 # Check if the selected index has changed
                 if st.session_state.selected_index != st.session_state.prev_selected_index:
                     st.session_state.history = []  # Reset chat history
+                    st.session_state.query_count = 0  # Reset query count
+                    st.session_state.qa_history = []  # Reset QA history
                     st.session_state.prev_selected_index = st.session_state.selected_index
             else:
                 st.info("No indexes available in Pinecone.")
@@ -147,8 +187,13 @@ def initial_home():
             st.write("---")  # Separator
             st.title("Chat with Assistant")
 
+            # Display query count
+            remaining_queries = 5 - st.session_state.query_count
+            st.info(f"Remaining queries: {remaining_queries}")
+
             # Input box for user message
-            user_input = st.chat_input("Enter your query:")
+            user_input = st.chat_input("Enter your query:", 
+                              disabled=remaining_queries <= 0)
 
             # Display chat messages
             chat_container = st.container()
@@ -157,7 +202,7 @@ def initial_home():
                     with st.chat_message(message["role"]):
                         st.markdown(message["content"])
 
-            if user_input:
+            if user_input and remaining_queries > 0:
                 with st.chat_message("user"):
                     st.markdown(user_input)
                 st.session_state.history.append({"role": "user", "content": user_input})
@@ -184,6 +229,17 @@ def initial_home():
                     with st.chat_message("assistant"):
                         st.markdown(result)
                     st.session_state.history.append({"role": "assistant", "content": result})
+
+                    # Store Q&A in history
+                    st.session_state.qa_history.append({
+                        "question": user_input,
+                        "answer": result
+                    })
+                    
+                    # Increment query count
+                    st.session_state.query_count += 1
+
+
                 elif research_response.status_code == 401:
                     st.error("Your session has expired. Please log in again.")
                     # Log the user out
@@ -191,8 +247,19 @@ def initial_home():
                 else:
                     error_detail = research_response.json().get('detail', 'Unknown error')
                     st.error(f"Failed to run research query: {error_detail}")
-        else:
-            st.info("Please select an index above to start chatting.")
+
+            if st.session_state.qa_history:
+                if st.button("Export to PDF"):
+                    pdf_path = create_qa_pdf()
+                    with open(pdf_path, "rb") as pdf_file:
+                        st.download_button(
+                            label="Download PDF Report",
+                            data=pdf_file,
+                            file_name="research_report.pdf",
+                            mime="application/pdf"
+                        )
+                # else:
+                #     st.info("Please select an index above to start chatting.")
 
     else:
         # The rest of your code for the non-logged-in user remains the same
