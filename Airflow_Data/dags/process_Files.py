@@ -439,8 +439,8 @@ def main():
     processor = CombinedPDFProcessor()
     
     # Set the directory containing PDF files
-    pdf_dir = "../downloaded_pdfs"
-    
+    #pdf_dir = "../downloaded_pdfs"
+    pdf_dir = "/opt/airflow/downloaded_pdfs"
     # Process all PDFs in the directory
     processor.process_and_store(pdf_dir)
 
