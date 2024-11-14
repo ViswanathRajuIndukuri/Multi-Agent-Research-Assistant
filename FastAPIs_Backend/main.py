@@ -15,7 +15,6 @@ from google.cloud.exceptions import NotFound
 from google.oauth2.service_account import Credentials
 from contextlib import asynccontextmanager
 
-
 import time
 from dotenv import load_dotenv
 
