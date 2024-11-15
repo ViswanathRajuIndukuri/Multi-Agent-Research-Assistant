@@ -91,6 +91,24 @@ The challenge is to build an end-to-end research tool that can process documents
    - Multi-agent research process
    - Answers from 3 different agents will be handled by final agent to be sent to OpenAI API
    - Response presentation and export options for PDF & Codelabs
+  
+4. **Export as Codelabs**:
+   - Pre requisites to use codelabs export option, use below commands
+     ```
+     #first time installation in mac:
+     curl -LO https://github.com/googlecodelabs/tools/releases/latest/download/claat-darwin-amd64
+     sudo mv claat-darwin-amd64 /usr/local/bin/claat  
+     chmod +x /usr/local/bin/claat 
+     ```
+   - You choose the Export as Codelabs option, then for opening codelabs document:
+     ```
+     #codelabs opening steps:
+     cd downloads
+     claat export .md file
+     cd created dir
+     claat serve
+     ```
+   - this will open the codelabs in localhost server
 
 ## Project Structure
 ```
