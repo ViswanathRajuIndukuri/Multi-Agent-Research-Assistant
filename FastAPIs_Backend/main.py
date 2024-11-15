@@ -1,6 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Request, Query
+# fastapi_app.py
+
+from fastapi import FastAPI, HTTPException, Depends, status, Request, Query, Body
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel, EmailStr, field_validator
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError, ExpiredSignatureError
 from passlib.context import CryptContext
@@ -9,32 +12,32 @@ from uuid import uuid4, UUID
 import os
 from openai import OpenAI
 from dotenv import load_dotenv
-from typing import List
+from typing import List, Dict, Optional
 from google.cloud import storage
 from google.cloud.exceptions import NotFound
 from google.oauth2.service_account import Credentials
 from contextlib import asynccontextmanager
-
+import io
 import time
-from dotenv import load_dotenv
-
 from serpapi.google_search import GoogleSearch
-
 from langchain_community.utilities import ArxivAPIWrapper
 from langchain_community.tools import ArxivQueryRun
-
 from pinecone import Pinecone, ServerlessSpec
-
 from langchain_core.tools import tool
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import ChatOpenAI
-
-
-from typing import Annotated, Sequence, TypedDict, Literal
 from langgraph.graph import StateGraph, MessagesState, END
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from md2pdf.core import md2pdf
+import logging
+import markdown2
+from weasyprint import HTML
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -47,7 +50,7 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 gcp_creds_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
@@ -157,7 +160,7 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
-    @field_validator('username')
+    @validator('username')
     def username_alphanumeric(cls, v):
         if not v.isalnum():
             raise ValueError('Username must be alphanumeric')
@@ -165,7 +168,7 @@ class UserCreate(BaseModel):
             raise ValueError('Username must be between 3 and 30 characters')
         return v
 
-    @field_validator('password')
+    @validator('password')
     def password_strength(cls, v):
         if len(v) < 6:
             raise ValueError('Password must be at least 6 characters long')
@@ -178,12 +181,22 @@ class UserOut(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class GenerateReportRequest(BaseModel):
+    chat_history: List[ChatMessage]
+
+class ResearchQuery(BaseModel):
+    query: str
+    index_name: str
 
 @app.post("/register", response_model=UserOut)
 def register_user(user: UserCreate):
@@ -264,10 +277,7 @@ def list_pinecone_indexes(token: str = Depends(oauth2_scheme)):
         return {"indexes": index_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
-class ResearchQuery(BaseModel):
-    query: str
-    index_name: str
+
 serpapi_params = {
     "engine": "google",
     "api_key": serpapi_key
@@ -284,14 +294,13 @@ def web_search(query: str):
     })
     results = search.get_dict()["organic_results"]
     web_search_results = "\n---\n".join(
-        ["\n".join([x["title"], x["snippet"], x["link"]]) for x in results]
+        ["\n".join([x.get("title", ""), x.get("snippet", ""), x.get("link", "")]) for x in results]
     )
     return web_search_results
 
 ## Arxiv
-arxiv_wrapper=ArxivAPIWrapper(top_k_results=5)
-arxiv_tool=ArxivQueryRun(api_wrapper=arxiv_wrapper)
-arxiv_tool.invoke("what is investment model validation")
+arxiv_wrapper = ArxivAPIWrapper(top_k_results=5)
+arxiv_tool = ArxivQueryRun(api_wrapper=arxiv_wrapper)
 
 @tool("search_arxiv")
 def search_arxiv(query: str):
@@ -309,8 +318,6 @@ def search_arxiv(query: str):
         [f"Published: {entry.strip()}" for entry in entries]
     )
     return arxiv_search_results
-
-
 
 # Define state schema without 'next' since we're running in parallel
 class AgentState(MessagesState):
@@ -353,32 +360,12 @@ def create_arxiv_agent():
             }
     return arxiv_agent
 
-
-index_name = "pdf-investment-model-validation-a-guide-for"  # change if desired
-#index_name = "gpt-4o-research-agent" 
-
-existing_indexes = [index_info["name"] for index_info in pc.list_indexes()]
-
-if index_name not in existing_indexes:
-    pc.create_index(
-        name=index_name,
-        dimension=1536,
-        metric="cosine",
-        spec=ServerlessSpec(cloud="aws", region="us-east-1"),
-    )
-    while not pc.describe_index(index_name).status["ready"]:
-        time.sleep(1)
-
-index = pc.Index(index_name)
-
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-
-vector_store = PineconeVectorStore(index=index, embedding=embeddings)
-
-# 1. Create a retriever from your vector store
-retriever = vector_store.as_retriever(search_kwargs={'k': 2})
-
-def create_rag_agent():
+def create_rag_agent(index_name):
+    index = pc.Index(index_name)
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    vector_store = PineconeVectorStore(index=index, embedding=embeddings)
+    retriever = vector_store.as_retriever(search_kwargs={'k': 2})
+    
     def rag_agent(state: AgentState):
         try:
             query = state["messages"][0].content
@@ -396,7 +383,6 @@ def create_rag_agent():
             }
     return rag_agent
 
-
 def create_final_agent():
     llm = ChatOpenAI(
         model="gpt-4o-mini",
@@ -405,39 +391,39 @@ def create_final_agent():
     
     def final_agent(state: AgentState):
         system_prompt = """You are an expert research assistant tasked with synthesizing information from multiple sources.
-        Your goal is to provide a comprehensive, well-structured response that:
-        1. Combines insights from web searches, academic research, and internal documents
-        2. Organizes information logically with clear sections
-        3. Highlights key findings and practical implications
-        4. Maintains academic rigor while being accessible
-        5. Provides specific examples and evidence when available"""
+Your goal is to provide a comprehensive, well-structured response that:
+1. Combines insights from web searches, academic research, and internal documents
+2. Organizes information logically with clear sections
+3. Highlights key findings and practical implications
+4. Maintains academic rigor while being accessible
+5. Provides specific examples and evidence when available"""
 
         user_query = state["messages"][0].content
         
         analysis_prompt = f"""
-        Based on the following information sources:
+Based on the following information sources:
 
-        WEB SEARCH FINDINGS:
-        {state['web_results']}
+WEB SEARCH FINDINGS:
+{state['web_results']}
 
-        ACADEMIC RESEARCH:
-        {state['arxiv_results']}
+ACADEMIC RESEARCH:
+{state['arxiv_results']}
 
-        INTERNAL DOCUMENT ANALYSIS:
-        {state['rag_results']}
+INTERNAL DOCUMENT ANALYSIS:
+{state['rag_results']}
 
-        Please provide a comprehensive analysis addressing this query:
-        {user_query}
+Please provide a comprehensive analysis addressing this query:
+{user_query}
 
-        Format your response with:
-        1. Key Findings
-        2. Detailed Analysis
-        3. Practical Implications
-        4. Recommendations (if applicable)
-        5. Web Source links
-        6. Arxiv Sources
-        
-        Ensure to synthesize information across all sources and highlight any important patterns or contradictions."""
+Format your response with:
+1. Key Findings
+2. Detailed Analysis
+3. Practical Implications
+4. Recommendations (if applicable)
+5. Web Source links
+6. Arxiv Sources
+
+Ensure to synthesize information across all sources and highlight any important patterns or contradictions."""
         
         messages = [
             SystemMessage(content=system_prompt),
@@ -459,13 +445,13 @@ def create_final_agent():
     return final_agent
 
 # Modified workflow for parallel execution
-def build_workflow():
+def build_workflow(index_name):
     workflow = StateGraph(AgentState)
     
     # Add nodes
     workflow.add_node("web_agent", create_web_agent())
     workflow.add_node("arxiv_agent", create_arxiv_agent())
-    workflow.add_node("rag_agent", create_rag_agent())
+    workflow.add_node("rag_agent", create_rag_agent(index_name))
     workflow.add_node("final", create_final_agent())
     
     # Add edges for parallel execution
@@ -498,9 +484,10 @@ def run_research_query_endpoint(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     query = research_query.query
+    index_name = research_query.index_name
 
     # Build the workflow
-    research_app = build_workflow()
+    research_app = build_workflow(index_name)
 
     # Run the research query
     try:
@@ -516,3 +503,111 @@ def run_research_query_endpoint(
     except Exception as e:
         print(f"Query execution error: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while processing your query.")
+
+# Updated generate_report endpoint using WeasyPrint
+@app.post("/generate-report")
+def generate_report(
+    token: str = Depends(oauth2_scheme),
+    request: GenerateReportRequest = Body(...)
+):
+    # Authenticate the user
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Generate the report
+    try:
+        chat_history = request.chat_history
+
+        # Combine the chat history into a markdown string
+        md_content = ""
+        for message in chat_history:
+            role = message.role
+            content = message.content
+            if role == "user":
+                md_content += f"### Question:\n{content}\n\n"
+            elif role == "assistant":
+                md_content += f"### Research Results:\n{content}\n\n"
+
+        # Log the md_content
+        logger.info(f"Markdown content:\n{md_content}")
+
+        # Convert markdown to HTML
+        html_content = markdown2.markdown(md_content)
+
+        # Generate PDF from HTML using WeasyPrint
+        pdf_bytes = HTML(string=html_content).write_pdf()
+
+        # Return the PDF as a StreamingResponse
+        return StreamingResponse(io.BytesIO(pdf_bytes), media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename=report.pdf"
+        })
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        raise HTTPException(status_code=500, detail=f"An error occurred while generating the report: {str(e)}")
+    
+
+class Message(BaseModel):
+    role: str
+    content: str
+
+class GenerateReportRequest(BaseModel):
+    chat_history: List[Message]
+
+@app.post("/generate-markdown-codelab")
+def generate_markdown_codelab(
+    token: str = Depends(oauth2_scheme),
+    request: GenerateReportRequest = Body(...)
+):
+    # Authenticate the user
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if not username:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Generate the Codelab content in Markdown format
+    try:
+        chat_history = request.chat_history
+
+        # Codelab metadata and introductory section
+        md_content = """# Interactive Research Session
+summary: Generated research session report in Codelab format.
+id: research-session-codelab
+categories: Research
+
+## Introduction
+This Codelab presents the research session in a question-answer format, based on user queries and the assistant's responses.
+"""
+
+        # Process chat history, pairing each user question with assistant's response
+        question_count = 1
+        for i in range(0, len(chat_history) - 1, 2):
+            user_message = chat_history[i].content if chat_history[i].role == "user" else ""
+            assistant_message = chat_history[i + 1].content if chat_history[i + 1].role == "assistant" else ""
+            
+            md_content += f"\n## Question {question_count}\n\n{user_message}\n\n"
+            md_content += f"### Response\n\n{assistant_message}\n\n"
+            question_count += 1
+
+        # Log the md_content
+        logger.info(f"Codelab Markdown content:\n{md_content}")
+
+        # Return the Codelab-compatible Markdown file as a StreamingResponse
+        return StreamingResponse(io.BytesIO(md_content.encode()), media_type="text/markdown", headers={
+            "Content-Disposition": f"attachment; filename=research_codelab.md"
+        })
+
+    except Exception as e:
+        logger.error(f"Error generating Codelab markdown file: {e}")
+        raise HTTPException(status_code=500, detail=f"An error occurred while generating the Codelab markdown file: {str(e)}")
