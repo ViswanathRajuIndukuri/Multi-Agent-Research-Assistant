@@ -5,7 +5,7 @@ FROM python:3.12
 WORKDIR /app
 
 # Copy the Streamlit_app directory and requirements.txt from the root context
-COPY ./Streamlit_app /app
+COPY ./Streamlit_UI /app
 COPY ./requirements.txt /app
 
 # Install any dependencies specified in requirements.txt
