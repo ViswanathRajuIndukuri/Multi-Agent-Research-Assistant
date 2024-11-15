@@ -21,3 +21,4 @@ AIRFLOW_UID=502
 OENAI_API_KEy="your key"
 PINECONE_API_KEY="your key"
 ```
+done
