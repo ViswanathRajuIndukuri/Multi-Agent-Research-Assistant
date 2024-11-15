@@ -10,7 +10,6 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white)](https://cloud.google.com)
 [![LangChain](https://img.shields.io/badge/🦜️_LangChain-008080?style=for-the-badge&logo=chainlink&logoColor=white)](https://github.com/langchain-ai/langchain)
-
 [![LangGraph](https://img.shields.io/badge/LangGraph-FF6F61?style=for-the-badge&logo=graph&logoColor=white)](https://github.com/langchain-ai/langgraph)
 
 WE ATTEST THAT WE HAVEN’T USED ANY OTHER STUDENTS’ WORK IN OUR
@@ -52,7 +51,9 @@ This project implements an advanced research assistant system that combines docu
 **Stream lit Application Link**: http://viswanath.me:8501/
 
 ## Architecture
-[Insert your architecture diagram here]
+![research_assistant_system](https://github.com/user-attachments/assets/bf632d64-bd67-4ff2-b93e-455774572cb0)
+
+![langgraph_agents_system](https://github.com/user-attachments/assets/41a3d4be-819a-45bb-b8d4-e70177b744a8)
 
 ## About
 
