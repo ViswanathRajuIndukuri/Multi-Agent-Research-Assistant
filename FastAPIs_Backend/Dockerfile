@@ -5,7 +5,7 @@ FROM python:3.12
 WORKDIR /app
 
 # Copy the Fast_API directory and requirements.txt from the root context
-COPY ./Fast_API /app
+COPY ./FastAPIs_Backend /app
 COPY ./requirements.txt /app
 
 # Install any dependencies specified in requirements.txt
