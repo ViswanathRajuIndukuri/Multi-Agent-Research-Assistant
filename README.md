@@ -24,9 +24,9 @@ Contribution:
 This project was completed as a team effort over two weeks, with each member focusing on specific tasks to ensure successful completion. Below are the individual contributions:
  
 #### Viswanath Raju Indukuri
-- **Multi-Agents:** Developed and designed multiple agents that works to generate th responses
+- **Multi-Agents:** Developed and designed multiple agents that works to generate the responses
+- **Report Generation:** Worked on Report generation in codelabs format for the user to export
 - **Deployment:** Dockerising the services and deploying them in GCP
-- **Report Generation:** Worked on Report generation in codelabs format for the user to export.
  
 #### Snehal Shivaji Molavade
 - **PDF Export:** created the option to export PDF for the responses and work on report generation PoC files
@@ -47,8 +47,6 @@ This project implements an advanced research assistant system that combines docu
 **Application URL**: http://viswanath.me:8501/
 
 **Backend Service Link**: http://viswanath.me:8000/docs
-
-**Stream lit Application Link**: http://viswanath.me:8501/
 
 ## Architecture
 ![research_assistant_system](https://github.com/user-attachments/assets/bf632d64-bd67-4ff2-b93e-455774572cb0)
@@ -96,24 +94,49 @@ The challenge is to build an end-to-end research tool that can process documents
 
 ## Project Structure
 ```
-├── Airflow
-│   ├── bigdata-8989-af8a98180360.json
-│   ├── config
-│   ├── dags
-│   ├── logs
-│   └── plugins
+.
+├── Airflow_Data
+│   ├── dags
+│   ├── docker-compose.yaml
+│   ├── dockerfile
+│   ├── logs
+│   └── requirements.txt
 ├── FastAPIs_Backend
-│   ├── Dockerfile
-│   └── main.py
+│   ├── Dockerfile
+│   └── main.py
+├── LICENSE
+├── README.md
 ├── Streamlit_UI
-│   ├── Dockerfile
-│   └── app.py
+│   ├── Dockerfile
+│   └── app.py
+├── diagrams
+│   ├── Agents_diag.py
+│   ├── Assignment4_diagrams.ipynb
+│   ├── Project4_diag.py
+│   ├── airflow_icon.png
+│   ├── arxiv_icon.png
+│   ├── cfa_icon.png
+│   ├── docker_icon.png
+│   ├── docling_ico.png
+│   ├── docling_icon.png
+│   ├── fastapi_icon.png
+│   ├── google_search_icon.jpg
+│   ├── langgraph_agents_system.png
+│   ├── langgraph_icon.png
+│   ├── openai_icon.png
+│   ├── pinecone_icon.png
+│   ├── rag_icon.png
+│   ├── research_assistant_system.png
+│   ├── selenium_icon.png
+│   └── streamlit_icon.png
+├── docker-compose.yml
 ├── poc
-│   ├── agent_poc1.py
-│   ├── agents.ipynb
-│   ├── list_indexes.py
-│   ├── pinecone_indexdetails.py
-│   └── query.py
+│   ├── agent_poc1.py
+│   ├── agents.ipynb
+│   ├── codelab_test
+│   ├── list_indexes.py
+│   ├── pinecone_indexdetails.py
+│   └── query.py
 └── requirements.txt
 ```
 
