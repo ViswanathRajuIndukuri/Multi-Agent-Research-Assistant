@@ -1,4 +1,4 @@
-# Research Assistant Using LangGraph and Multi-Agent Architecture
+# Multi-Agent, Multi-Modal Research Assistant
 
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
