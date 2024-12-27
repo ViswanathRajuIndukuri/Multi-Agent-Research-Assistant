@@ -12,30 +12,6 @@
 [![LangChain](https://img.shields.io/badge/🦜️_LangChain-008080?style=for-the-badge&logo=chainlink&logoColor=white)](https://github.com/langchain-ai/langchain)
 [![LangGraph](https://img.shields.io/badge/LangGraph-FF6F61?style=for-the-badge&logo=graph&logoColor=white)](https://github.com/langchain-ai/langgraph)
 
-WE ATTEST THAT WE HAVEN’T USED ANY OTHER STUDENTS’ WORK IN OUR
-ASSIGNMENT AND ABIDE BY THE POLICIES LISTED IN THE STUDENT HANDBOOK
-Contribution:
-- a. Viswanath Raju Indukuri: 33%
-- b. Snehal Shivaji Molavade: 33%
-- c. Sai Vivekanand Reddy Vangala: 33%
-
-### Individual Contributions
- 
-This project was completed as a team effort over two weeks, with each member focusing on specific tasks to ensure successful completion. Below are the individual contributions:
- 
-#### Viswanath Raju Indukuri
-- **Multi-Agents:** Developed and designed multiple agents that works to generate the responses
-- **Report Generation:** Worked on Report generation in codelabs format for the user to export
-- **Deployment:** Dockerising the services and deploying them in GCP
- 
-#### Snehal Shivaji Molavade
-- **PDF Export:** created the option to export PDF for the responses and work on report generation PoC files
-- **Codelabs Documentation:** Created codelab documentation with all the details of project explained in details
- 
-#### Sai Vivekanand Reddy Vangala
-- **Data Acquisition by Airflow:** Used the Airflow to create a pipeline that'll scrape the PDFs, process them using Docling and then store their embeddings in pinecone
-- **Readme Documentation & Diagram:** Created comprehensive documentation for the project, user workflow, setup, deployment, and usage. Designed the architecture diagram to represent the project.
-
 ## Description
 
 This project implements an advanced research assistant system that combines document processing, multi-agent architecture, and vector search capabilities. The system uses Apache Airflow for document processing pipelines, integrates multiple specialized agents (Web Search, Arxiv, and RAG) for comprehensive research, and provides a user-friendly interface through Streamlit. The system leverages LangGraph for agent orchestration and Pinecone for efficient vector storage and retrieval.
